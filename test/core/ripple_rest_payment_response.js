@@ -9,6 +9,7 @@ describe('A Payment Response from Ripple Rest', function() {
   describe('the response to a successful payment', function() {
     it('should have no errors', function() {
       var paymentResponse = new RippleRestPaymentResponse(successfulPaymentResponseJson);
+      console.log(paymentResponse.error)
       assert(!paymentResponse.error);
     });
   });
@@ -18,6 +19,14 @@ describe('A Payment Response from Ripple Rest', function() {
       var paymentResponse = new RippleRestPaymentResponse(failedPaymentResponseJson);
       assert.strictEqual(paymentResponse.error, 'temBAD_PATH');
     });
+  });
+
+  describe('the successful response from the payment status query', function() {
+
+  });
+
+  describe('the pending response from the payment status query', function() {
+
   });
 
   describe('handling the ripple rest payment response', function() {
@@ -35,13 +44,13 @@ describe('A Payment Response from Ripple Rest', function() {
   before(function() {
     // Example JSON data is from the github wiki for Ripple REST
     // https://github.com/ripple/ripple-rest/blob/develop/docs/api-reference.md#submit-a-payment
-    successfulPaymentResponseJson = {
+    failedPaymentResponseJson = {
       "success": false,
       "client_resource_id": "f2f811b7-dc3b-4078-a2c2-e4ca9e453981",
-      "error": "Some Error",
+      "error": "temBAD_PATH",
       "message": "Some explanation of the error"
     };
-    failedPaymentResponseJson = {
+    successfulPaymentResponseJson = {
       "success": true,
       "client_resource_id": "f2f811b7-dc3b-4078-a2c2-e4ca9e453981",
       "status_url": ".../v1/accounts/r1.../payments/f2f811b7-dc3b-4078-a2c2-e4ca9e453981"

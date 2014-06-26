@@ -1,25 +1,12 @@
 var gateway = require(__dirname + '/../');
-var sendPayment = require(__dirname + "/../lib//ripple/send_payment");
-var buildPayment = require(__dirname + '/../lib/ripple/build_payment');
-var getPaymentStatus = require(__dirname + '/../lib/ripple/get_payment_status');
 var depositCallbackJob = require(__dirname+'/../lib/jobs/deposit_completion_callback.js');
+var RippleRestClient = require('ripple-rest-client');
+var uuid = require('node-uuid');
 
-console.log(depositCallbackJob.perform);
-
-var middleware;
-
-process.env.DATABASE_URL = gateway.config.get('DATABASE_URL');
-
-var middlewarePath = process.env.PAYMENT_SENT_MIDDLEWARE;
-if (middlewarePath) {
-  middleware = require(middlewarePath);
-} else {
-  middleware = function(payment){
-    console.log('payment sent');
-    console.log(payment.to_amount, payment.to_currency);
-  };
-};
-
+var rippleRestClient = new RippleRestClient({
+  account: gateway.config.get('HOT_WALLET').address,
+  secret: ''
+})
 
 /**
  * @function loop
@@ -38,75 +25,47 @@ function loop(){
  *
  * @param transaction
  * @param address
- * @param fn
+ * @param callback
  *
  */
 
-function processOutgoingPayment(transaction, address, fn){
+function processOutgoingPayment(transaction, address, callback){
 
-  buildPayment(transaction, address, function(err, payment) {
-    if (err) { handleError(err, fn); return; }
-    sendPayment(payment, function(err, resp){
+  rippleRestClient.buildPayment({
+    amount: transaction.to_amount,
+    currency: transaction.to_currency,
+    issuer: gateway.config.get('COLD_WALLET'),
+    account: gateway.config.get('HOT_WALLET').account,
+    recipient: address.address
+  }, function(error, response) {
+    if (error) { handleError(error, callback); return; }
+    if (!response.success) {
+      return handleError(response.message, callback);
+    }
+    var payment = response.payments[0];
+    payment.partial_payment = false;
+    payment.no_direct_ripple = false;
+    rippleRestClient.sendPayment({
+      payment: payment,
+      client_resource_id: uuid.v4(),
+      secret: gateway.config.get('HOT_WALLET').secret
+    }, function(err, resp){
       if (err || !resp.success) {
-        handleError(err, fn);
+        handleError(err, callback);
       } else {
-        fn(null, resp);
+        console.log(resp);
+        callback(null, resp);
       }
     });
   });
 
-  function handleError(err, fn) {
+  function handleError(err, callback) {
     if (typeof err === 'string' && err.match('No paths found')){
-      fn('noPathFound', null);
+      callback('noPathFound', null);
     } else {
-      fn('retry', null);
+      callback('retry', null);
     }
   }
-}
-
-/**
- *
- * @function getAndHandlePaymentStatus
- * @param statusUrl
- * @param callback
- * @param loopFunction
- *
- * @description Call this function in a loop, passing in itself as the loopFunction.
- * It will call Ripple REST for the status of a payment, and loop if
- * the state is not "validated"
- *
- */
-
-function getAndHandlePaymentStatus(statusUrl, callback, loopFunction){
-  getPaymentStatus(statusUrl, function(err, payment){
-    if(err){
-      callback(err, null);
-      loopFunction(statusUrl, callback, loopFunction);
-    } else {
-      console.log('getPaymentStatus::', payment);
-      if (payment.state == 'validated'){
-        callback(null, payment);
-      } else {
-        loopFunction(statusUrl, callback, loopFunction);
-      }
-    }
-  });
-}
-
-/**
- * @function pollPaymentStatus
- * @description Upon successfully posting a payment to Ripple REST
- * use the client_resource_id and status url provided to poll for
- * the payment's status and validate its state in the Rippled ledger.
- *
- * The pollPaymentStatus function calls a single looping function,
- * passing in the callback and looping function as parameters
- * @param {string} statusUrl
- * @param {function} callback
- * @returns {Payment}
- */
-function pollPaymentStatus(statusUrl, callback){
-  getAndHandlePaymentStatus(statusUrl, callback, getAndHandlePaymentStatus);
 }
 
 /**
@@ -127,14 +86,16 @@ function popOutgoingPayment() {
       var transaction = transactions[0];
       if (transaction) {
         gateway.data.rippleAddresses.read(transaction.to_address_id, function(err, address) {
-          processOutgoingPayment(transaction, address, function(err, resp){
-            if (err) {
-              switch(err)
+          processOutgoingPayment(transaction, address, function(error, resp){
+            if (error) {
+              console.log('ERROR PROCESSING', error);
+              switch(error)
               {
                 case 'retry':
                   transaction.state = 'outgoing';
                   break;
                 case 'noPathFound':
+                  transaction.transaction_state = 'tecPATH_DRY';
                   transaction.state = 'failed';
                   break;
                 default:
@@ -149,8 +110,7 @@ function popOutgoingPayment() {
               transaction.state = 'sent';
               transaction.uid = resp.client_resource_id;
               transaction.save().complete(function(){
-                middleware(transaction);
-                pollPaymentStatus(statusUrl, function(err, payment){
+                rippleRestClient.pollPaymentStatus(statusUrl, function(err, payment){
                   transaction.transaction_state = payment.result;
                   transaction.transaction_hash = payment.hash;
                   switch(payment.result) {

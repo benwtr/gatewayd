@@ -24,7 +24,7 @@
     "ripple-wallet": "1.0.0",
     "require-all": "",
     "ripple-gateway-webapp-example": "1.6.1",
-    "ripple-rest-client": "1.5.0",
+    "ripple-rest-client": "1.8.0",
     "node-uuid": "1.4.1",
     "ejs": "",
     "cli-table": "0.3.0",
@@ -43,6 +43,7 @@
     "sinon": "^1.9.1",
     "grunt-jsdoc": "^0.5.4",
     "supertest": "^0.13.0",
-    "sql-mq-worker": "^1.0.1"
+    "sql-mq-worker": "^1.0.1",
+    "superagent": "^0.18.0"
   }
 }
