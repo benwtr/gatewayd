@@ -53,7 +53,6 @@ function processOutgoingPayment(transaction, address, callback){
       if (err || !resp.success) {
         handleError(err, callback);
       } else {
-        console.log(resp);
         callback(null, resp);
       }
     });
@@ -88,7 +87,6 @@ function popOutgoingPayment() {
         gateway.data.rippleAddresses.read(transaction.to_address_id, function(err, address) {
           processOutgoingPayment(transaction, address, function(error, resp){
             if (error) {
-              console.log('ERROR PROCESSING', error);
               switch(error)
               {
                 case 'retry':
