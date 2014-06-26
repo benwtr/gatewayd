@@ -1,3 +1,26 @@
+##06/24/2014
+
+##Version:
+3.20.1
+
+###Fixed bugs:
+- On incoming payments record to_address_id not from_address_id
+- Fix generate_wallet cli command
+- Update fund_hot_wallet CLI command notes
+
+##06/17/2014
+
+##Version:
+3.21.0
+
+###Fixed bugs:
+- Use 'state' column in list failed payments api call
+- Default webapp paths under USER_AUTH
+
+###Added features:
+- HTTP / JSON Api Documenation
+- List Trust Lines endpoint from account to cold wallet
+
 ##06/10/2014
 
 ###Version:

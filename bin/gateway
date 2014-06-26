@@ -30,7 +30,7 @@ program
   .action(cli.clearWithdrawal);
 
 program
-  .command('fund_hot_wallet <amount> <currency> <secret>')
+  .command('fund_hot_wallet <amount> <currency> <cold_wallet_secret>')
   .description('issue funds from cold wallet to hot wallet') 
   .action(cli.fundHotWallet);
 
@@ -139,7 +139,7 @@ program
   program
     .command('generate_wallet')
     .description('generate a random ripple wallet')
-    .action(gateway.api.generateWallet);
+    .action(cli.generateWallet);
 
   program
     .command('set_hot_wallet <address> <secret>')

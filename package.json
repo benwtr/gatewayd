@@ -1,6 +1,6 @@
 {
   "name": "ripple-gateway",
-  "version": "3.20.0",
+  "version": "3.21.1",
   "scripts": {
     "start": "./bin/gateway start",
     "test": "mocha -R spec ./test/http"
@@ -39,11 +39,10 @@
     "require-all-to-camel": "^1.0.0",
     "sequelize": "^1.7.0",
     "mocha": "~1.14.0",
-    "node-uuid": "1.4.1",
     "grunt-db-migrate": "^0.2.0",
-    "grunt": "^0.4.4",
     "sinon": "^1.9.1",
     "grunt-jsdoc": "^0.5.4",
-    "supertest": "^0.13.0"
+    "supertest": "^0.13.0",
+    "sql-mq-worker": "^1.0.1"
   }
 }
